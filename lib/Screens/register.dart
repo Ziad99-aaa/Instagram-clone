@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:insta/Screens/sign_in.dart';
 import 'package:insta/fire_base_services/Auth.dart';
+import 'package:insta/responsive/mobile.dart';
+import 'package:insta/responsive/responsive.dart';
+import 'package:insta/responsive/web.dart';
 import 'package:insta/shared/colors.dart';
 import 'package:insta/shared/contants.dart';
 import 'package:insta/shared/snackbar.dart';
@@ -513,7 +516,10 @@ class _RegisterState extends State<Register> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const Login(),
+                              builder: (context) => const Responsive(
+                                myMobileScreen: MobileScreen(),
+                                myWebScreen: WebScreen(),
+                              ),
                             ),
                           );
                         } else {
