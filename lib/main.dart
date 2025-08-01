@@ -6,6 +6,7 @@ import 'package:insta/Screens/sign_in.dart';
 import 'package:insta/firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {

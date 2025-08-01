@@ -251,9 +251,7 @@ class _RegisterState extends State<Register> {
                                   ),
                                   radius: 71,
                                   // backgroundImage: AssetImage("assets/img/avatar.png"),
-                                  backgroundImage: MemoryImage(
-                                    imgPath!,
-                                  ),
+                                  backgroundImage: MemoryImage(imgPath!),
                                 ),
                           Positioned(
                             left: 99,
@@ -272,11 +270,9 @@ class _RegisterState extends State<Register> {
                     ),
                     const SizedBox(height: 33),
                     TextFormField(
-                      validator:(value) {
-                        return value!.length < 1
-                            ? "cant be empty"
-                            : null;
-                      }, 
+                      validator: (value) {
+                        return value!.length < 1 ? "cant be empty" : null;
+                      },
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       controller: usernameController,
                       keyboardType: TextInputType.text,
@@ -288,11 +284,9 @@ class _RegisterState extends State<Register> {
                     ),
                     const SizedBox(height: 22),
                     TextFormField(
-                      validator:(value) {
-                        return value!.length < 1
-                            ? "cant be empty"
-                            : null;
-                      }, 
+                      validator: (value) {
+                        return value!.length < 1 ? "cant be empty" : null;
+                      },
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       controller: titleController,
                       keyboardType: TextInputType.text,
@@ -495,26 +489,26 @@ class _RegisterState extends State<Register> {
                     // ),
                     ElevatedButton(
                       onPressed: () async {
-                        if (_formKey.currentState!.validate()
-                        // &&
-                        //     imgName != null &&
-                        //     imgPath != null
-                        ) {
+                        if (_formKey.currentState!.validate() &&
+                            imgName != null &&
+                            imgPath != null) {
                           setState(() {
-                            isLoading == true;
+                            isLoading = true;
                           });
 
                           await Auth().register(
-                            email: emailController.text,
+                            emaill: emailController.text,
                             pass: passwordController.text,
-                            context: context, 
-                            userName: usernameController.text, 
-                            title: titleController.text,
+                            context: context,
+                            userNamee: usernameController.text,
+                            titlee: titleController.text,
+                            imgName: imgName,
+                            imgPath: imgPath,
                           );
 
                           if (!mounted) return;
                           setState(() {
-                            isLoading == false;
+                            isLoading = false;
                           });
                           Navigator.pushReplacement(
                             context,
@@ -538,11 +532,8 @@ class _RegisterState extends State<Register> {
                         ),
                       ),
                       child: isLoading
-                          ?  CircularProgressIndicator(color: Colors.white)
-                          :  Text(
-                              "Register",
-                              style: TextStyle(fontSize: 19),
-                            ),
+                          ? CircularProgressIndicator(color: Colors.white)
+                          : Text("Register", style: TextStyle(fontSize: 19)),
                     ),
                     const SizedBox(height: 33),
                     Row(
