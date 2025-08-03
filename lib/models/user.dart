@@ -4,6 +4,8 @@ class UserDate {
   String password;
   String email;
   String profileImg;
+  List followers;
+  List following;
 
   UserDate({
     required this.username,
@@ -11,6 +13,8 @@ class UserDate {
     required this.password,
     required this.title,
     required this.profileImg,
+    required this.followers,
+    required this.following,
   });
 
   // To convert the UserData(Data type) to   Map<String, Object>
@@ -20,7 +24,9 @@ class UserDate {
       'title': title,
       'email': email,
       'password': password,
-      'profileImg':profileImg
+      'profileImg': profileImg,
+      'followers': [],
+      'following': [],
     };
   }
 }

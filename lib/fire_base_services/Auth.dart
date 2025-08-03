@@ -14,6 +14,7 @@ class Auth {
     required imgName,
     required imgPath,
     required context,
+    
   }) async {
     String message = "ERORR=> no read";
     try {
@@ -36,6 +37,8 @@ class Auth {
         password: pass,
         title: titlee,
         profileImg: urlll,
+        followers:[],
+        following:[]
       );
 
       users

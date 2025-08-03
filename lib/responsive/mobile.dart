@@ -15,7 +15,7 @@ class MobileScreen extends StatefulWidget {
 }
 
 class _MobileScreenState extends State<MobileScreen> {
-  final PageController _pageController = PageController();
+  final PageController _pageController = PageController(initialPage: 2);
   var page = 0;
 
   @override

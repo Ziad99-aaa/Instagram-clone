@@ -15,6 +15,9 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   Map userData = {};
   bool isLoading = true;
+  int following = 0;
+  int followers = 0;
+
   getData() async {
     setState(() {
       isLoading = true;
@@ -26,6 +29,8 @@ class _ProfileState extends State<Profile> {
           .doc(FirebaseAuth.instance.currentUser!.uid)
           .get();
       userData = user.data()!;
+      following = userData["following"].length;
+      followers = userData["followers"].length;
     } catch (e) {
       print(e.toString());
     }
@@ -45,7 +50,10 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     final double widthScreen = MediaQuery.of(context).size.width;
     return isLoading == true
-        ? Center(child: CircularProgressIndicator(color: Colors.white))
+        ? Scaffold(
+            backgroundColor: mobileBackgroundColor,
+            body: Center(child: CircularProgressIndicator(color: Colors.white)),
+          )
         : Scaffold(
             backgroundColor: mobileBackgroundColor,
             appBar: AppBar(
@@ -99,7 +107,7 @@ class _ProfileState extends State<Profile> {
                           Column(
                             children: [
                               Text(
-                                "8",
+                                followers.toString(),
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -120,7 +128,7 @@ class _ProfileState extends State<Profile> {
                           Column(
                             children: [
                               Text(
-                                "15",
+                                following.toString(),
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
