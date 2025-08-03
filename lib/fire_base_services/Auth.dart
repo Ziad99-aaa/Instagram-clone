@@ -57,4 +57,20 @@ class Auth {
     }
     showSnackBar(context, message);
   }
+
+  signIn({required emaill, required passwordd}) async {
+    try {
+      // ignore: unused_local_variable
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emaill,
+        password: passwordd,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        print('No user found for that email.');
+      } else if (e.code == 'wrong-password') {
+        print('Wrong password provided for that user.');
+      }
+    }
+  }
 }
