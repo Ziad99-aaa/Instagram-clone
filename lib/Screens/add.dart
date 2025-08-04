@@ -5,8 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:insta/fire_base_services/fire_store.dart';
+import 'package:insta/provider/user_provider.dart';
 import 'package:insta/shared/colors.dart';
 import 'package:path/path.dart' show basename;
+import 'package:provider/provider.dart';
 
 class Add extends StatefulWidget {
   const Add({super.key});
@@ -20,17 +23,13 @@ class _AddState extends State<Add> {
   String? imgName;
   bool isUploading = false;
   Map userData = {};
-  bool isLoading = true;
+  bool isLoading = false;
+  bool isAdding = false;
   int following = 0;
   int followers = 0;
   final TextEditingController captionController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    getData();
-  }
-
   uploadImage2Screen(ImageSource source) async {
     Navigator.pop(context);
     final XFile? pickedImg = await ImagePicker().pickImage(source: source);
@@ -95,29 +94,10 @@ class _AddState extends State<Add> {
     );
   }
 
-  getData() async {
-    setState(() {
-      isLoading = true;
-    });
-    try {
-      DocumentSnapshot<Map<String, dynamic>> user = await FirebaseFirestore
-          .instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .get();
-      userData = user.data()!;
-      following = userData["following"].length;
-      followers = userData["followers"].length;
-    } catch (e) {
-      print(e.toString());
-    }
-    setState(() {
-      isLoading = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final allDataFromDB = Provider.of<UserProvider>(context).getUser;
+
     return isUploading
         ? Scaffold(
             backgroundColor: Colors.black,
@@ -136,8 +116,27 @@ class _AddState extends State<Add> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async{
+                    setState(() {
+                      isAdding = true;
+                    });
                     // TODO: Handle post submission
+                    await FirestoreMethods().uploadPost(
+                      imgName: imgName,
+                      imgPath: imgPath,
+                      description: captionController.text,
+                      profileImg: allDataFromDB!.profileImg,
+                      username: allDataFromDB.username,
+                      context: context,
+                    );
+                    setState(() {
+                      isAdding = false;
+                    });
+                    setState(() {
+                      isUploading = false;
+                      imgPath = null;
+                      captionController.clear();
+                    });
                   },
                   child: const Text(
                     "Post",
@@ -152,6 +151,11 @@ class _AddState extends State<Add> {
                     padding: const EdgeInsets.all(12.0),
                     child: Column(
                       children: [
+                        isAdding == true
+                            ? LinearProgressIndicator()
+                            : Divider(),
+
+                        SizedBox(height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -159,7 +163,7 @@ class _AddState extends State<Add> {
                             CircleAvatar(
                               radius: 24,
                               backgroundImage: NetworkImage(
-                                userData["profileImg"],
+                                allDataFromDB!.profileImg,
                               ),
                             ),
                             const SizedBox(width: 12),

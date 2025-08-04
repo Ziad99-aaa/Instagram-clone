@@ -31,7 +31,7 @@ class Auth {
       CollectionReference users = FirebaseFirestore.instance.collection(
         'users',
       );
-      UserDate user = UserDate(
+      UserData user = UserData(
         username: userNamee,
         email: emaill,
         password: pass,
@@ -60,6 +60,7 @@ class Auth {
     }
     showSnackBar(context, message);
   }
+  
 
   signIn({required emaill, required passwordd}) async {
     try {
@@ -76,4 +77,10 @@ class Auth {
       }
     }
   }
+
+   // functoin to get user details from Firestore (Database)
+Future<UserData> getUserDetails() async {
+   DocumentSnapshot snap = await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).get(); 
+   return UserData.convertSnap2Model(snap);
+ }
 }

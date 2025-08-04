@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:insta/provider/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class Responsive extends StatefulWidget {
   final myWebScreen;
@@ -13,14 +15,28 @@ class Responsive extends StatefulWidget {
 }
 
 class _RsponsiveState extends State<Responsive> {
+  // To get data from DB using provider
+  getDataFromDB() async {
+    UserProvider userProvider = Provider.of(context, listen: false);
+    await userProvider.refreshUser();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getDataFromDB();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (buildContext, boxConstraints) {
-      if (boxConstraints.maxWidth > 600) {
-        return widget.myWebScreen;
-      } else {
-        return widget.myMobileScreen;
-      }
-    });
+    return LayoutBuilder(
+      builder: (buildContext, boxConstraints) {
+        if (boxConstraints.maxWidth > 600) {
+          return widget.myWebScreen;
+        } else {
+          return widget.myMobileScreen;
+        }
+      },
+    );
   }
 }
