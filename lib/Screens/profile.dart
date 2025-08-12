@@ -17,6 +17,7 @@ class _ProfileState extends State<Profile> {
   bool isLoading = true;
   int following = 0;
   int followers = 0;
+  int postsLength = 0;
 
   getData() async {
     setState(() {
@@ -28,7 +29,13 @@ class _ProfileState extends State<Profile> {
           .collection('users')
           .doc(FirebaseAuth.instance.currentUser!.uid)
           .get();
+      QuerySnapshot<Map<String, dynamic>> posts = await FirebaseFirestore
+          .instance
+          .collection('posts')
+          .where("uid", isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+          .get();
       userData = user.data()!;
+      postsLength = posts.docs.length;
       following = userData["following"].length;
       followers = userData["followers"].length;
     } catch (e) {
@@ -86,7 +93,7 @@ class _ProfileState extends State<Profile> {
                           Column(
                             children: [
                               Text(
-                                "1",
+                                postsLength.toString(),
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -225,33 +232,54 @@ class _ProfileState extends State<Profile> {
                   thickness: widthScreen > 600 ? 0.06 : 0.44,
                 ),
                 SizedBox(height: 19),
-                Expanded(
-                  child: Padding(
-                    padding: widthScreen > 600
-                        ? const EdgeInsets.all(66.0)
-                        : const EdgeInsets.all(3.0),
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 3 / 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: 3,
-                      itemBuilder: (BuildContext context, int index) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.network(
-                            "https://cdn1-m.alittihad.ae/store/archive/image/2021/10/22/6266a092-72dd-4a2f-82a4-d22ed9d2cc59.jpg?width=1300",
+                FutureBuilder(
+                  future: FirebaseFirestore.instance
+                      .collection('posts')
+                      .where(
+                        "uid",
+                        isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+                      )
+                      .get(),
+                  builder: (BuildContext context, AsyncSnapshot snapshot) {
+                    if (snapshot.hasError) {
+                      return Text("Something went wrong");
+                    }
 
-                            // height: 333,
-                            // width: 100,
-                            fit: BoxFit.cover,
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      return Expanded(
+                        child: Padding(
+                          padding: widthScreen > 600
+                              ? const EdgeInsets.all(66.0)
+                              : const EdgeInsets.all(3.0),
+                          child: GridView.builder(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 3 / 2,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                ),
+                            itemCount: snapshot.data!.docs.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.network(
+                                  snapshot.data!.docs[index]["imgPost"],
+                                  // "https://cdn1-m.alittihad.ae/store/archive/image/2021/10/22/6266a092-72dd-4a2f-82a4-d22ed9d2cc59.jpg?width=1300",
+
+                                  // height: 333,
+                                  // width: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      );
+                    }
+
+                    return LinearProgressIndicator();
+                  },
                 ),
               ],
             ),
