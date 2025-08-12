@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:insta/shared/colors.dart';
-import 'package:insta/shared/post.dart';
+import 'package:insta/shared/postDesign.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -60,6 +60,7 @@ class _HomeState extends State<Home> {
             children: snapshot.data!.docs.map((DocumentSnapshot document) {
               final data = document.data()! as Map<String, dynamic>;
               return Post(
+                userImg: data["profileImg"],
                 username: data["username"],
                 postImg: data["imgPost"],
                 likeCount: (data["likes"] as List).length,

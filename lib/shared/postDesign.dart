@@ -8,15 +8,18 @@ class Post extends StatelessWidget {
   final String postImg;
   final int likeCount;
   final String description;
+  final String userImg;
   final DateTime date;
 
   const Post({
     super.key,
+
     required this.username,
     required this.postImg,
     required this.likeCount,
     required this.description,
     required this.date,
+    required this.userImg,
   });
 
   @override
@@ -42,10 +45,18 @@ class Post extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    ProfilePicture(name: username, radius: 31, fontsize: 21),
+                    ProfilePicture(
+                      name: username,
+                      radius: 31,
+                      fontsize: 21,
+                      img: userImg,
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(left: 20),
-                      child: Text(username, style: const TextStyle(fontSize: 22)),
+                      child: Text(
+                        username,
+                        style: const TextStyle(fontSize: 22),
+                      ),
                     ),
                   ],
                 ),
