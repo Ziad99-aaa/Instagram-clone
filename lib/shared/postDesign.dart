@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_profile_picture/flutter_profile_picture.dart';
+import 'package:insta/Screens/comment.dart';
 import 'package:intl/intl.dart';
 import 'package:insta/shared/colors.dart';
 
@@ -10,6 +11,9 @@ class Post extends StatelessWidget {
   final String description;
   final String userImg;
   final DateTime date;
+  final String postId;
+  
+
 
   const Post({
     super.key,
@@ -20,6 +24,7 @@ class Post extends StatelessWidget {
     required this.description,
     required this.date,
     required this.userImg,
+    required this.postId,
   });
 
   @override
@@ -87,7 +92,14 @@ class Post extends StatelessWidget {
                     icon: const Icon(Icons.favorite_border_outlined, size: 25),
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CommentScreen(profileImg: userImg,postId: postId),
+                        ),
+                      );
+                    },
                     icon: const Icon(Icons.message_outlined, size: 25),
                   ),
                   IconButton(

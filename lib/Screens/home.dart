@@ -2,8 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:insta/provider/user_provider.dart';
 import 'package:insta/shared/colors.dart';
 import 'package:insta/shared/postDesign.dart';
+import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -16,14 +18,17 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     final double widthScreen = MediaQuery.of(context).size.width;
+    final allDataFromDB = Provider.of<UserProvider>(context).getUser;
 
     return Scaffold(
-      backgroundColor:
-          widthScreen > 600 ? webBackgroundColor : mobileBackgroundColor,
+      backgroundColor: widthScreen > 600
+          ? webBackgroundColor
+          : mobileBackgroundColor,
       appBar: widthScreen > 600
           ? null
           : AppBar(
-              toolbarHeight: 100,
+              backgroundColor: mobileBackgroundColor,
+              toolbarHeight: 80,
               title: SvgPicture.asset(
                 "assets/img/instagram.svg",
                 color: primaryColor,
@@ -39,7 +44,7 @@ class _HomeState extends State<Home> {
                     await FirebaseAuth.instance.signOut();
                   },
                   icon: const Icon(Icons.output_outlined, size: 28),
-                )
+                ),
               ],
             ),
       body: StreamBuilder<QuerySnapshot>(
@@ -60,6 +65,7 @@ class _HomeState extends State<Home> {
             children: snapshot.data!.docs.map((DocumentSnapshot document) {
               final data = document.data()! as Map<String, dynamic>;
               return Post(
+                postId: data["postId"],
                 userImg: data["profileImg"],
                 username: data["username"],
                 postImg: data["imgPost"],

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:insta/Screens/add.dart';
+import 'package:insta/Screens/comment.dart';
 import 'package:insta/Screens/fav.dart';
 import 'package:insta/Screens/home.dart';
 import 'package:insta/Screens/profile.dart';
