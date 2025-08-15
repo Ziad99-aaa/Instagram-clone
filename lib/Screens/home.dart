@@ -70,6 +70,7 @@ class _HomeState extends State<Home> {
                 username: data["username"],
                 postImg: data["imgPost"],
                 likeCount: (data["likes"] as List).length,
+                commentCount: (data["comments"] as List).length,
                 description: data["description"],
                 date: (data["datePublished"] as Timestamp).toDate(),
               );

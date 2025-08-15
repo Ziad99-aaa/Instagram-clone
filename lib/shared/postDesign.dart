@@ -1,19 +1,21 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_profile_picture/flutter_profile_picture.dart';
 import 'package:insta/Screens/comment.dart';
+import 'package:insta/provider/user_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:insta/shared/colors.dart';
+import 'package:provider/provider.dart';
 
 class Post extends StatelessWidget {
   final String username;
   final String postImg;
   final int likeCount;
+  final int commentCount;
   final String description;
   final String userImg;
   final DateTime date;
   final String postId;
-  
-
 
   const Post({
     super.key,
@@ -25,11 +27,13 @@ class Post extends StatelessWidget {
     required this.date,
     required this.userImg,
     required this.postId,
+    required this.commentCount,
   });
 
   @override
   Widget build(BuildContext context) {
     final double widthScreen = MediaQuery.of(context).size.width;
+    final allDataFromDB = Provider.of<UserProvider>(context).getUser;
 
     return Container(
       decoration: BoxDecoration(
@@ -65,8 +69,57 @@ class Post extends StatelessWidget {
                     ),
                   ],
                 ),
+                username != allDataFromDB!.username
+                    ? Text("")
+                    :
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    final parentContext = context; // Save a safe reference
+
+                    showDialog(
+                      context: parentContext,
+                      builder: (BuildContext dialogContext) {
+                        return SimpleDialog(
+                          children: [
+                            SimpleDialogOption(
+                              padding: const EdgeInsets.all(20),
+                              onPressed: () async {
+                                Navigator.of(
+                                  dialogContext,
+                                ).pop(); // Close dialog first
+
+                                await FirebaseFirestore.instance
+                                    .collection('posts')
+                                    .doc(postId)
+                                    .delete();
+
+                                // Optional: Show confirmation after deletion
+                                if (parentContext.mounted) {
+                                  ScaffoldMessenger.of(
+                                    parentContext,
+                                  ).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Post deleted'),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Text('Delete Post'),
+                            ),
+                            SimpleDialogOption(
+                              padding: const EdgeInsets.all(20),
+                              onPressed: () {
+                                Navigator.of(
+                                  dialogContext,
+                                ).pop(); // Just close dialog
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                   icon: const Icon(Icons.more_vert_outlined, size: 25),
                 ),
               ],
@@ -96,11 +149,22 @@ class Post extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CommentScreen(profileImg: userImg,postId: postId),
+                          builder: (context) => CommentScreen(
+                            profileImg: userImg,
+                            postId: postId,
+                          ),
                         ),
                       );
                     },
-                    icon: const Icon(Icons.message_outlined, size: 25),
+                    icon: Row(
+                      children: [
+                        Icon(Icons.message_outlined, size: 25),
+                        Text(
+                          commentCount > 99 ? "99+" : commentCount.toString(),
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ],
+                    ),
                   ),
                   IconButton(
                     onPressed: () {},

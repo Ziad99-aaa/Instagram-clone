@@ -100,6 +100,7 @@ class _LoginState extends State<Login> {
                         isLoading = true;
                       });
                      await Auth().signIn(
+                      context: context,
                         emaill: emailController.text,
                         passwordd: passwordController.text,
                       );

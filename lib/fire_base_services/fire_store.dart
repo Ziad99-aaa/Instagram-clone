@@ -41,6 +41,7 @@ class FirestoreMethods {
         datePublished: DateTime.now(),
         description: description,
         imgPost: urlll,
+        comments:[],
         likes: [],
         profileImg: profileImg,
         postId: newId,

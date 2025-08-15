@@ -505,8 +505,8 @@ class _RegisterState extends State<Register> {
                             context: context,
                             userNamee: usernameController.text,
                             titlee: titleController.text,
-                            imgName: imgName,
-                            imgPath: imgPath,
+                            imgName: imgName!,
+                            imgPath: imgPath!,
                           );
 
                           if (!mounted) return;

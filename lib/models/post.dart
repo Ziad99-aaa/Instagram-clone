@@ -9,8 +9,9 @@ class PostData {
   final String postId;
   final DateTime datePublished;
   final List likes;
+  final List comments;
 
-  PostData({
+  PostData( {
     required this.profileImg,
     required this.username,
     required this.description,
@@ -19,6 +20,8 @@ class PostData {
     required this.postId,
     required this.datePublished,
     required this.likes,
+    required this.comments,
+
   });
 
   // To convert the UserData(Data type) to   Map<String, Object>
@@ -33,6 +36,7 @@ class PostData {
       'datePublished': datePublished,
 
       'likes': [],
+      'comments': [],
     };
   }
 
@@ -50,6 +54,7 @@ class PostData {
       postId: snapshot["postId"],
       datePublished: snapshot["datePublished"],
       likes: snapshot["likes"],
+      comments: snapshot["comments"],
     );
   }
 }
