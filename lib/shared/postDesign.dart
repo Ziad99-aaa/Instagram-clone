@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_profile_picture/flutter_profile_picture.dart';
 import 'package:insta/Screens/comment.dart';
@@ -7,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:insta/shared/colors.dart';
 import 'package:provider/provider.dart';
 
-class Post extends StatelessWidget {
+class Post extends StatefulWidget {
   final String username;
   final String postImg;
   final int likeCount;
@@ -16,19 +17,67 @@ class Post extends StatelessWidget {
   final String userImg;
   final DateTime date;
   final String postId;
+  final List likes; // ✅ added to know who liked
 
   const Post({
     super.key,
-
     required this.username,
     required this.postImg,
     required this.likeCount,
-    required this.description,
-    required this.date,
-    required this.userImg,
-    required this.postId,
     required this.commentCount,
+    required this.description,
+    required this.userImg,
+    required this.date,
+    required this.postId,
+    required this.likes,
   });
+
+  @override
+  State<Post> createState() => _PostState();
+}
+
+class _PostState extends State<Post> {
+  late bool isLiked;
+  late int likeCount;
+
+  @override
+  void initState() {
+    super.initState();
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+    isLiked = widget.likes.contains(uid);
+    likeCount = widget.likeCount;
+  }
+
+  Future<void> toggleLike() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      DocumentReference postRef = FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.postId);
+
+      if (isLiked) {
+        // ✅ Unlike
+        await postRef.update({
+          "likes": FieldValue.arrayRemove([uid]),
+        });
+        setState(() {
+          isLiked = false;
+          likeCount--;
+        });
+      } else {
+        // ✅ Like
+        await postRef.update({
+          "likes": FieldValue.arrayUnion([uid]),
+        });
+        setState(() {
+          isLiked = true;
+          likeCount++;
+        });
+      }
+    } catch (e) {
+      print("❌ Error toggling like: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,94 +104,91 @@ class Post extends StatelessWidget {
                 Row(
                   children: [
                     ProfilePicture(
-                      name: username,
+                      name: widget.username,
                       radius: 31,
                       fontsize: 21,
-                      img: userImg,
+                      img: widget.userImg,
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 20),
                       child: Text(
-                        username,
+                        widget.username,
                         style: const TextStyle(fontSize: 22),
                       ),
                     ),
                   ],
                 ),
-                username != allDataFromDB!.username
-                    ? Text("")
-                    :
-                IconButton(
-                  onPressed: () {
-                    final parentContext = context; // Save a safe reference
+                widget.username != allDataFromDB!.username
+                    ? const SizedBox()
+                    : IconButton(
+                        onPressed: () {
+                          final parentContext = context;
 
-                    showDialog(
-                      context: parentContext,
-                      builder: (BuildContext dialogContext) {
-                        return SimpleDialog(
-                          children: [
-                            SimpleDialogOption(
-                              padding: const EdgeInsets.all(20),
-                              onPressed: () async {
-                                Navigator.of(
-                                  dialogContext,
-                                ).pop(); // Close dialog first
+                          showDialog(
+                            context: parentContext,
+                            builder: (BuildContext dialogContext) {
+                              return SimpleDialog(
+                                children: [
+                                  SimpleDialogOption(
+                                    padding: const EdgeInsets.all(20),
+                                    onPressed: () async {
+                                      Navigator.of(dialogContext).pop();
+                                      await FirebaseFirestore.instance
+                                          .collection('posts')
+                                          .doc(widget.postId)
+                                          .delete();
 
-                                await FirebaseFirestore.instance
-                                    .collection('posts')
-                                    .doc(postId)
-                                    .delete();
-
-                                // Optional: Show confirmation after deletion
-                                if (parentContext.mounted) {
-                                  ScaffoldMessenger.of(
-                                    parentContext,
-                                  ).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Post deleted'),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: const Text('Delete Post'),
-                            ),
-                            SimpleDialogOption(
-                              padding: const EdgeInsets.all(20),
-                              onPressed: () {
-                                Navigator.of(
-                                  dialogContext,
-                                ).pop(); // Just close dialog
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  icon: const Icon(Icons.more_vert_outlined, size: 25),
-                ),
+                                      if (parentContext.mounted) {
+                                        ScaffoldMessenger.of(
+                                          parentContext,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Post deleted'),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('Delete Post'),
+                                  ),
+                                  SimpleDialogOption(
+                                    padding: const EdgeInsets.all(20),
+                                    onPressed: () {
+                                      Navigator.of(dialogContext).pop();
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.more_vert_outlined, size: 25),
+                      ),
               ],
             ),
           ),
 
           // Post Image
           Image.network(
-            postImg,
+            widget.postImg,
             height: MediaQuery.of(context).size.height * .25,
             width: double.infinity,
             fit: BoxFit.cover,
           ),
 
-          // Action buttons (like, comment, share, save)
+          // Action buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
                   IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.favorite_border_outlined, size: 25),
+                    onPressed: toggleLike,
+                    icon: Icon(
+                      isLiked ? Icons.favorite : Icons.favorite_border_outlined,
+                      size: 25,
+                      color: isLiked ? Colors.red : null,
+                    ),
                   ),
                   IconButton(
                     onPressed: () {
@@ -150,18 +196,20 @@ class Post extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => CommentScreen(
-                            profileImg: userImg,
-                            postId: postId,
+                            profileImg: widget.userImg,
+                            postId: widget.postId,
                           ),
                         ),
                       );
                     },
                     icon: Row(
                       children: [
-                        Icon(Icons.message_outlined, size: 25),
+                        const Icon(Icons.message_outlined, size: 25),
                         Text(
-                          commentCount > 99 ? "99+" : commentCount.toString(),
-                          style: TextStyle(fontSize: 20),
+                          widget.commentCount > 99
+                              ? "99+"
+                              : widget.commentCount.toString(),
+                          style: const TextStyle(fontSize: 20),
                         ),
                       ],
                     ),
@@ -193,18 +241,18 @@ class Post extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      username,
+                      widget.username,
                       style: TextStyle(color: primaryColor, fontSize: 20),
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      description,
+                      widget.description,
                       style: TextStyle(color: secondaryColor, fontSize: 20),
                     ),
                   ],
                 ),
                 Text(
-                  DateFormat('yyyy-MM-dd HH:mm').format(date),
+                  DateFormat('yyyy-MM-dd HH:mm').format(widget.date),
                   style: TextStyle(color: secondaryColor, fontSize: 16),
                 ),
               ],

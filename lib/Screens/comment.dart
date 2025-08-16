@@ -164,7 +164,7 @@ class _CommentScreenState extends State<CommentScreen> {
                             isDone = true;
                             commentController.clear();
                           });
-
+                          if (!mounted) return;
                           await Future.delayed(Duration(seconds: 2));
                           setState(() {
                             isDone = false;
