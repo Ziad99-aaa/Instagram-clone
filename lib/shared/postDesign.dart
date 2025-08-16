@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ class Post extends StatefulWidget {
   final String userImg;
   final DateTime date;
   final String postId;
-  final List likes; // ✅ added to know who liked
+  final List likes;
 
   const Post({
     super.key,
@@ -39,6 +40,8 @@ class Post extends StatefulWidget {
 class _PostState extends State<Post> {
   late bool isLiked;
   late int likeCount;
+  bool showBigHeart = false;
+  Timer? _heartTimer;
 
   @override
   void initState() {
@@ -48,7 +51,13 @@ class _PostState extends State<Post> {
     likeCount = widget.likeCount;
   }
 
-  Future<void> toggleLike() async {
+  @override
+  void dispose() {
+    _heartTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> toggleLike({bool fromDoubleTap = false}) async {
     try {
       String uid = FirebaseAuth.instance.currentUser!.uid;
       DocumentReference postRef = FirebaseFirestore.instance
@@ -56,19 +65,22 @@ class _PostState extends State<Post> {
           .doc(widget.postId);
 
       if (isLiked) {
-        // ✅ Unlike
-        await postRef.update({
-          "likes": FieldValue.arrayRemove([uid]),
-        });
-        setState(() {
-          isLiked = false;
-          likeCount--;
-        });
+        if (!fromDoubleTap) {
+          // ❌ Double tap مش هيعمل dislike
+          await postRef.update({
+            "likes": FieldValue.arrayRemove([uid]),
+          });
+          if (!mounted) return;
+          setState(() {
+            isLiked = false;
+            likeCount--;
+          });
+        }
       } else {
-        // ✅ Like
         await postRef.update({
           "likes": FieldValue.arrayUnion([uid]),
         });
+        if (!mounted) return;
         setState(() {
           isLiked = true;
           likeCount++;
@@ -77,6 +89,25 @@ class _PostState extends State<Post> {
     } catch (e) {
       print("❌ Error toggling like: $e");
     }
+  }
+
+  void handleDoubleTap() {
+    // أعمل Like
+    toggleLike(fromDoubleTap: true);
+
+    // أظهر القلب الكبير
+    setState(() {
+      showBigHeart = true;
+    });
+
+    // اخفيه بعد 2 ثانية
+    _heartTimer?.cancel();
+    _heartTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() {
+        showBigHeart = false;
+      });
+    });
   }
 
   @override
@@ -95,7 +126,7 @@ class _PostState extends State<Post> {
       ),
       child: Column(
         children: [
-          // Top bar (profile + username + menu)
+          // top bar
           Padding(
             padding: const EdgeInsets.all(13),
             child: Row(
@@ -121,46 +152,11 @@ class _PostState extends State<Post> {
                 widget.username != allDataFromDB!.username
                     ? const SizedBox()
                     : IconButton(
-                        onPressed: () {
-                          final parentContext = context;
-
-                          showDialog(
-                            context: parentContext,
-                            builder: (BuildContext dialogContext) {
-                              return SimpleDialog(
-                                children: [
-                                  SimpleDialogOption(
-                                    padding: const EdgeInsets.all(20),
-                                    onPressed: () async {
-                                      Navigator.of(dialogContext).pop();
-                                      await FirebaseFirestore.instance
-                                          .collection('posts')
-                                          .doc(widget.postId)
-                                          .delete();
-
-                                      if (parentContext.mounted) {
-                                        ScaffoldMessenger.of(
-                                          parentContext,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Post deleted'),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    child: const Text('Delete Post'),
-                                  ),
-                                  SimpleDialogOption(
-                                    padding: const EdgeInsets.all(20),
-                                    onPressed: () {
-                                      Navigator.of(dialogContext).pop();
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
+                        onPressed: () async {
+                          await FirebaseFirestore.instance
+                              .collection('posts')
+                              .doc(widget.postId)
+                              .delete();
                         },
                         icon: const Icon(Icons.more_vert_outlined, size: 25),
                       ),
@@ -168,15 +164,32 @@ class _PostState extends State<Post> {
             ),
           ),
 
-          // Post Image
-          Image.network(
-            widget.postImg,
-            height: MediaQuery.of(context).size.height * .25,
-            width: double.infinity,
-            fit: BoxFit.cover,
+          // Post Image + Heart overlay
+          GestureDetector(
+            onDoubleTap: handleDoubleTap,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Image.network(
+                  widget.postImg,
+                  height: MediaQuery.of(context).size.height * .35,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                AnimatedOpacity(
+                  opacity: showBigHeart ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(
+                    Icons.favorite,
+                    size: 100,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          // Action buttons
+          // actions
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -214,10 +227,6 @@ class _PostState extends State<Post> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.send, size: 25),
-                  ),
                 ],
               ),
               IconButton(
@@ -227,7 +236,7 @@ class _PostState extends State<Post> {
             ],
           ),
 
-          // Likes, description, and date
+          // likes, description, date
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(5),
@@ -245,9 +254,12 @@ class _PostState extends State<Post> {
                       style: TextStyle(color: primaryColor, fontSize: 20),
                     ),
                     const SizedBox(width: 10),
-                    Text(
-                      widget.description,
-                      style: TextStyle(color: secondaryColor, fontSize: 20),
+                    Flexible(
+                      child: Text(
+                        widget.description,
+                        style: TextStyle(color: secondaryColor, fontSize: 20),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
