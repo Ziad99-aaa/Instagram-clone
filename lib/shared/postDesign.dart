@@ -60,13 +60,12 @@ class _PostState extends State<Post> {
   Future<void> toggleLike({bool fromDoubleTap = false}) async {
     try {
       String uid = FirebaseAuth.instance.currentUser!.uid;
-      DocumentReference postRef = FirebaseFirestore.instance
-          .collection('posts')
-          .doc(widget.postId);
+      DocumentReference postRef =
+          FirebaseFirestore.instance.collection('posts').doc(widget.postId);
 
       if (isLiked) {
         if (!fromDoubleTap) {
-          // ❌ Double tap مش هيعمل dislike
+          // double tap will never dislike
           await postRef.update({
             "likes": FieldValue.arrayRemove([uid]),
           });
@@ -92,15 +91,13 @@ class _PostState extends State<Post> {
   }
 
   void handleDoubleTap() {
-    // أعمل Like
     toggleLike(fromDoubleTap: true);
 
-    // أظهر القلب الكبير
+    if (!mounted) return; // ✅ avoid setState after dispose
     setState(() {
       showBigHeart = true;
     });
 
-    // اخفيه بعد 2 ثانية
     _heartTimer?.cancel();
     _heartTimer = Timer(const Duration(seconds: 2), () {
       if (!mounted) return;
@@ -126,7 +123,7 @@ class _PostState extends State<Post> {
       ),
       child: Column(
         children: [
-          // top bar
+          // 🔝 Top bar
           Padding(
             padding: const EdgeInsets.all(13),
             child: Row(
@@ -149,22 +146,22 @@ class _PostState extends State<Post> {
                     ),
                   ],
                 ),
-                widget.username != allDataFromDB!.username
-                    ? const SizedBox()
-                    : IconButton(
-                        onPressed: () async {
-                          await FirebaseFirestore.instance
-                              .collection('posts')
-                              .doc(widget.postId)
-                              .delete();
+
+                // ✅ safe null check for delete button
+                (allDataFromDB != null &&
+                        widget.username == allDataFromDB.username)
+                    ? IconButton(
+                        onPressed: () {
+                          _showDeleteDialog(context);
                         },
                         icon: const Icon(Icons.more_vert_outlined, size: 25),
-                      ),
+                      )
+                    : const SizedBox(),
               ],
             ),
           ),
 
-          // Post Image + Heart overlay
+          // 🖼 Post Image + Heart overlay
           GestureDetector(
             onDoubleTap: handleDoubleTap,
             child: Stack(
@@ -176,20 +173,23 @@ class _PostState extends State<Post> {
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),
-                AnimatedOpacity(
-                  opacity: showBigHeart ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(
-                    Icons.favorite,
-                    size: 100,
-                    color: Colors.white,
+                // Big heart animation
+                ...[100.0, 88.0, 73.0].map(
+                  (size) => AnimatedOpacity(
+                    opacity: showBigHeart ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.favorite,
+                      size: size,
+                      color: Colors.red.withOpacity(0.5),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // actions
+          // ❤️ + 💬 actions
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -225,18 +225,18 @@ class _PostState extends State<Post> {
                           style: const TextStyle(fontSize: 20),
                         ),
                       ],
-                    ),
-                  ),
+                    )
+                  ),SizedBox(width: 10,),const Icon(Icons.send_rounded, size: 25),
                 ],
               ),
               IconButton(
                 onPressed: () {},
-                icon: const Icon(Icons.save_alt_outlined, size: 25),
+                icon: const Icon(Icons.bookmark_outline_rounded, size: 30),
               ),
             ],
           ),
 
-          // likes, description, date
+          // 📌 likes, description, date
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(5),
@@ -272,6 +272,54 @@ class _PostState extends State<Post> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text("Delete Post"),
+          content: const Text("Are you sure you want to delete this post?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(widget.postId)
+                      .delete();
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("✅ Post deleted")),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("❌ Error deleting post: $e")),
+                    );
+                  }
+                }
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
